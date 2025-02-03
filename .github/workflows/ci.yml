@@ -1,5 +1,8 @@
 name: Build Changed Docker Services
 
+env:
+  REGISTRY: ghcr.io
+
 on:
   pull_request:
     branches:
@@ -18,7 +21,8 @@ jobs:
       - name: Find changed services
         id: changes
         run: |
-          CHANGED=$(git diff --name-only HEAD^ HEAD | awk -F'/' '{print $1}' | sort -u | uniq)
+          # Получаем измененные директории, ищем только те, которые содержат Dockerfile
+          CHANGED=$(git diff --name-only HEAD^ HEAD | awk -F'/' '{print $1}' | sort -u)
           BUILD_SERVICES=()
           for service in $CHANGED; do
             if [[ -f "$service/Dockerfile" ]]; then
@@ -26,21 +30,24 @@ jobs:
             fi
           done
           echo "Changed services: ${BUILD_SERVICES[@]}"
-          echo "build_services=${BUILD_SERVICES[@]}" >> "$GITHUB_ENV"
+          
+          # Сохраняем найденные сервисы в переменную окружения для использования в дальнейшем
+          echo "BUILD_SERVICES=${BUILD_SERVICES[@]}" >> "$GITHUB_ENV"
 
       - name: Docker login to GitHub Container Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
-          registry: ghcr.io
 
       - name: Build and Push Docker images
-        if: ${{ env.build_services != '' }}
+        if: ${{ env.BUILD_SERVICES != '' }}
         run: |
-          echo "Building and pushing images for: ${{ env.build_services }}"
-          for service in $(echo "${{ env.build_services }}" | tr ' ' '\n'); do
-            IMAGE_NAME="${{ github.repository }}:${service}-test-build"
+          # Собираем и пушим образы для каждого измененного сервиса
+          echo "Building and pushing images for: ${{ env.BUILD_SERVICES }}"
+          for service in $(echo "${{ env.BUILD_SERVICES }}" | tr ' ' '\n'); do
+            IMAGE_NAME="${{ env.REGISTRY }}/${{ github.repository }}:${service}-test-build"
             echo "Building image: $IMAGE_NAME"
             cd "$service"
             docker build -t "$IMAGE_NAME" .
