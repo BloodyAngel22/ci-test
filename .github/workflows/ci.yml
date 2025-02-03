@@ -36,7 +36,8 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          # password: ${{ secrets.GHCR_TOKEN }}
+          password: secret_token_1234
 
       - name: Build and Push Docker images
         if: ${{ env.build_services != '' }}
