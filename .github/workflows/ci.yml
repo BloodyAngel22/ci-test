@@ -27,12 +27,14 @@ jobs:
             fi
           done
           echo "Changed services: ${BUILD_SERVICES[@]}"
-          echo "build_services=[\"${BUILD_SERVICES[@]}\"]" >> "$GITHUB_ENV"
+          # Записываем переменную как строку, разделённую пробелами
+          echo "build_services=${BUILD_SERVICES[@]}" >> "$GITHUB_ENV"
 
       - name: Build Docker images
-        if: ${{ env.build_services != '[]' && env.build_services != '' }}
+        if: ${{ env.build_services != '' }}
         run: |
-          for service in $(echo ${{ env.build_services }} | jq -r '.[]'); do
+          # Разделяем строку с помощью jq, чтобы создать массив
+          for service in $(echo ${{ env.build_services }} | jq -r 'split(" ") | .[]'); do
             IMAGE_NAME="${service}:test-build"
             echo "Building image: $IMAGE_NAME"
             
