@@ -1,29 +1,40 @@
-name: CI/CD for Docker
+name: Build Changed Docker Services
 
 on:
   pull_request:
-    types:
-      - closed
     branches:
       - main
 
 jobs:
-  detect-changes:
-    if: github.event.pull_request.merged == true  # Запуск только при мерже PR
+  detect-and-build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 2  # Загружаем 2 последних коммита, чтобы git diff работал
 
-      - name: Get changed files
-        id: filter
+      - name: Find changed services
+        id: changes
         run: |
-          if git rev-parse HEAD^ >/dev/null 2>&1; then
-            CHANGED=$(git diff --name-only HEAD^ HEAD | awk -F'/' '{print $1}' | sort -u | uniq | jq -R -s -c 'split("\n")[:-1]')
-          else
-            CHANGED="[]"
-          fi
-          echo "changed_services=$CHANGED" >> "$GITHUB_ENV"
-          echo "Detected changes: $CHANGED"
+          # Определяем изменённые папки, содержащие Dockerfile
+          CHANGED=$(git diff --name-only HEAD^ HEAD | awk -F'/' '{print $1}' | sort -u | uniq)
+          BUILD_SERVICES=()
+          for service in $CHANGED; do
+            if [[ -f "$service/Dockerfile" ]]; then
+              BUILD_SERVICES+=("$service")
+            fi
+          done
+          echo "Changed services: ${BUILD_SERVICES[@]}"
+          echo "build_services=$(echo ${BUILD_SERVICES[@]} | jq -R -s -c 'split(" ")')" >> "$GITHUB_ENV"
+
+      - name: Build Docker images
+        if: env.build_services != '[]'
+        run: |
+          for service in $(echo $build_services | jq -r '.[]'); do
+            IMAGE_NAME="${service}:test-build"
+            echo "Building image: $IMAGE_NAME"
+            
+            docker build -t "$IMAGE_NAME" "$service"
+          done
