@@ -27,12 +27,12 @@ jobs:
             fi
           done
           echo "Changed services: ${BUILD_SERVICES[@]}"
-          echo "build_services=$(echo ${BUILD_SERVICES[@]} | jq -R -s -c 'split(" ")')" >> "$GITHUB_ENV"
+          echo "build_services=[\"${BUILD_SERVICES[@]}\"]" >> "$GITHUB_ENV"
 
       - name: Build Docker images
-        if: env.build_services != '[]'
+        if: ${{ env.build_services != '[]' && env.build_services != '' }}
         run: |
-          for service in $(echo $build_services | jq -r '.[]'); do
+          for service in $(echo ${{ env.build_services }} | jq -r '.[]'); do
             IMAGE_NAME="${service}:test-build"
             echo "Building image: $IMAGE_NAME"
             
