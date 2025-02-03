@@ -1,0 +1,22 @@
+name: Test GitHub Actions
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Debug GitHub Actions
+        run: |
+          echo "GitHub Actions test is running!"
+          echo "Repository: ${{ github.repository }}"
+          echo "Event: ${{ github.event_name }}"
