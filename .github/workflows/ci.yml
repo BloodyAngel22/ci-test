@@ -33,6 +33,7 @@ jobs:
         with:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
+          registry: ghcr.io
 
       - name: Build and Push Docker images
         if: ${{ env.build_services != '' }}
