@@ -30,11 +30,15 @@ jobs:
           # Записываем переменную как строку, разделённую пробелами
           echo "build_services=${BUILD_SERVICES[@]}" >> "$GITHUB_ENV"
 
+      - name: Check build_services value
+        run: echo "build_services=${{ env.build_services }}"
+
       - name: Build Docker images
         if: ${{ env.build_services != '' }}
         run: |
-          # Разделяем строку с помощью jq, чтобы создать массив
-          for service in $(echo ${{ env.build_services }} | jq -r 'split(" ") | .[]'); do
+          # Проверяем передаваемую строку
+          echo "Building images for: ${{ env.build_services }}"
+          for service in $(echo "${{ env.build_services }}" | tr ' ' '\n'); do
             IMAGE_NAME="${service}:test-build"
             echo "Building image: $IMAGE_NAME"
             
