@@ -20,4 +20,6 @@ app.UseHttpsRedirection();
 
 app.MapGet("/", () => "Hello World!");
 
+app.MapGet("/random", () => new Random().Next());
+
 app.Run();
