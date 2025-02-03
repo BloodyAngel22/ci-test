@@ -21,8 +21,7 @@ jobs:
       - name: Find changed services
         id: changes
         run: |
-          # Получаем измененные директории, ищем только те, которые содержат Dockerfile
-          CHANGED=$(git diff --name-only HEAD^ HEAD | awk -F'/' '{print $1}' | sort -u)
+          CHANGED=$(git diff --name-only HEAD^ HEAD | awk -F'/' '{print $1}' | sort -u | uniq)
           BUILD_SERVICES=()
           for service in $CHANGED; do
             if [[ -f "$service/Dockerfile" ]]; then
@@ -30,9 +29,7 @@ jobs:
             fi
           done
           echo "Changed services: ${BUILD_SERVICES[@]}"
-          
-          # Сохраняем найденные сервисы в переменную окружения для использования в дальнейшем
-          echo "BUILD_SERVICES=${BUILD_SERVICES[@]}" >> "$GITHUB_ENV"
+          echo "build_services=${BUILD_SERVICES[@]}" >> "$GITHUB_ENV"
 
       - name: Docker login to GitHub Container Registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
@@ -42,12 +39,12 @@ jobs:
           password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Build and Push Docker images
-        if: ${{ env.BUILD_SERVICES != '' }}
+        if: ${{ env.build_services != '' }}
         run: |
-          # Собираем и пушим образы для каждого измененного сервиса
-          echo "Building and pushing images for: ${{ env.BUILD_SERVICES }}"
-          for service in $(echo "${{ env.BUILD_SERVICES }}" | tr ' ' '\n'); do
-            IMAGE_NAME="${{ env.REGISTRY }}/${{ github.repository }}:${service}-test-build"
+          echo "Building and pushing images for: ${{ env.build_services }}"
+          REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
+          for service in $(echo "${{ env.build_services }}" | tr ' ' '\n'); do
+            IMAGE_NAME="ghcr.io/${REPO_NAME}:${service}-test-build"
             echo "Building image: $IMAGE_NAME"
             cd "$service"
             docker build -t "$IMAGE_NAME" .
