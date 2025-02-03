@@ -14,10 +14,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Get changed files
         id: filter
         run: |
-          CHANGED=$(git diff --name-only HEAD^ HEAD | awk -F'/' '{print $1}' | sort -u | uniq | jq -R -s -c 'split("\n")[:-1]')
+          if git rev-parse HEAD^ >/dev/null 2>&1; then
+            CHANGED=$(git diff --name-only HEAD^ HEAD | awk -F'/' '{print $1}' | sort -u | uniq | jq -R -s -c 'split("\n")[:-1]')
+          else
+            CHANGED="[]"
+          fi
           echo "changed_services=$CHANGED" >> "$GITHUB_ENV"
           echo "Detected changes: $CHANGED"
