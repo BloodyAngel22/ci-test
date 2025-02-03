@@ -1,22 +1,23 @@
-name: Test GitHub Actions
+name: CI/CD for Docker
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
+    types:
+      - closed
     branches:
       - main
 
 jobs:
-  test-ci:
+  detect-changes:
+    if: github.event.pull_request.merged == true  # Запуск только при мерже PR
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Debug GitHub Actions
+      - name: Get changed files
+        id: filter
         run: |
-          echo "GitHub Actions test is running!"
-          echo "Repository: ${{ github.repository }}"
-          echo "Event: ${{ github.event_name }}"
+          CHANGED=$(git diff --name-only HEAD^ HEAD | awk -F'/' '{print $1}' | sort -u | uniq | jq -R -s -c 'split("\n")[:-1]')
+          echo "changed_services=$CHANGED" >> "$GITHUB_ENV"
+          echo "Detected changes: $CHANGED"
