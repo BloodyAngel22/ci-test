@@ -2,6 +2,9 @@ name: Build and Push API Service
 
 on:
   workflow_call:
+    secrets:
+      GHCR_TOKEN:
+        required: true
 
 env:
   REGISTRY: ghcr.io
