@@ -24,6 +24,7 @@ jobs:
 
       - name: Build and Push Docker image
         run: |
-          IMAGE_NAME="${{ env.REGISTRY }}/${{ github.repository }}:${{ env.SERVICE_NAME }}-${{ env.SERVICE_TAG }}"
-          docker build -t "$IMAGE_NAME" ./$SERVICE_NAME
+          REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_NAME="${{ env.REGISTRY }}/${REPO_NAME}:${{ env.SERVICE_NAME }}-${{ env.SERVICE_TAG }}"
+          docker build -t "$IMAGE_NAME" ./${{ env.SERVICE_NAME }}
           docker push "$IMAGE_NAME"
