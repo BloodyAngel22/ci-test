@@ -3,6 +3,12 @@ name: Build and Push API Service
 on:
   workflow_call:
 
+permissions:
+  packages: write
+  contents: read
+  attestations: write
+  id-token: write
+
 env:
   REGISTRY: ghcr.io
   SERVICE_NAME: api
@@ -27,6 +33,6 @@ jobs:
           REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           echo "$REPO_NAME"
           IMAGE_NAME="${{ env.REGISTRY }}/${REPO_NAME}:${{ env.SERVICE_NAME }}-${{ env.SERVICE_TAG }}"
-          echo "$IMAGE_NAME"
           docker build -t "$IMAGE_NAME" ./${{ env.SERVICE_NAME }}
+          echo "$IMAGE_NAME"
           docker push "$IMAGE_NAME"
