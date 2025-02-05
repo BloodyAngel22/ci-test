@@ -8,6 +8,8 @@ on:
 permissions:
   contents: read
   packages: write
+  attestations: write
+  id-token: write
 
 jobs:
   detect-changes:
@@ -30,5 +32,3 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.api == 'true'
     uses: ./.github/workflows/service-api.yml
-    secrets:
-      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
