@@ -1,58 +1,29 @@
-name: Build Changed Docker Services
-
-env:
-  REGISTRY: ghcr.io
+name: Detect and Trigger Service Builds
 
 on:
   pull_request:
     branches:
       - main
 
-permissions:
-  contents: read
-  packages: write
-  attestations: write
-  id-token: write
-
 jobs:
-  detect-and-build:
+  detect-changes:
     runs-on: ubuntu-latest
 
+    outputs:
+      api: ${{ steps.filter.outputs.api }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
 
-      - name: Find changed services
-        id: changes
-        run: |
-          CHANGED=$(git diff --name-only HEAD^ HEAD | awk -F'/' '{print $1}' | sort -u | uniq)
-          BUILD_SERVICES=()
-          for service in $CHANGED; do
-            if [[ -f "$service/Dockerfile" ]]; then
-              BUILD_SERVICES+=("$service")
-            fi
-          done
-          echo "Changed services: ${BUILD_SERVICES[@]}"
-          echo "build_services=${BUILD_SERVICES[@]}" >> "$GITHUB_ENV"
-      - name: Docker login to GitHub Container Registry
-        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+      - name: Check for changes
+        id: filter
+        uses: dorny/paths-filter@v3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          filters: |
+            api:
+              - 'api/**'
 
-      - name: Build and Push Docker images
-        if: ${{ env.build_services != '' }}
-        run: |
-          echo "Building and pushing images for: ${{ env.build_services }}"
-          REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
-          for service in $(echo "${{ env.build_services }}" | tr ' ' '\n'); do
-            IMAGE_NAME="ghcr.io/${REPO_NAME}:${service}-test-build"
-            echo "Building image: $IMAGE_NAME"
-            cd "$service"
-            docker build -t "$IMAGE_NAME" .
-            docker push "$IMAGE_NAME"
-            cd -
-          done
+  trigger-api:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.api == 'true'
+    uses: ./.github/workflows/service-api.yml
