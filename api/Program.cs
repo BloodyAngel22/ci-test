@@ -18,7 +18,7 @@ app.MapScalarApiReference("docs", opt =>
 
 app.UseHttpsRedirection();
 
-app.MapGet("/", () => "Hi");
+app.MapGet("/", () => "pong");
 
 app.MapGet("/random", () => new Random().Next());
 
