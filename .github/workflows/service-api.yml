@@ -33,5 +33,5 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository_name }}:${{ env.SERVICE_TAG }}
+          tags: ${{ env.SERVICE_TAG }}
 
